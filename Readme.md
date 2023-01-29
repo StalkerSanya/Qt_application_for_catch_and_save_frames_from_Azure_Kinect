@@ -14,7 +14,7 @@ Qt application allows to catch frames from Azure Kinect device and save them on 
 ##  Running on Ubuntu 20.04
 
 1. Connect azure kinect device and run:
-   ``` python main.py --config azure_kinect_config.json --output <folder_to_save_images>```
+   ``` python azure_kinect_recorder.py --config azure_kinect_config_standalone.json --output <folder_to_save_images>```
 
 2. Click "Start" button" in application window. 
 3. To save color and depth image click "Photo" button.
