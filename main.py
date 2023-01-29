@@ -26,7 +26,6 @@ class CameraRGBD(QThread):
         self.status = True
         self.sensor = None
         self.color_frame = None
-        self.color_frame = None
         self.output_dir = None
         self.number_last_frame = 1
         self.align_depth_to_color = True
@@ -56,17 +55,15 @@ class CameraRGBD(QThread):
             rgbd = self.sensor.capture_frame(self.align_depth_to_color)
             if rgbd is None:
                 continue
-            self.color_frame = np.asarray(rgbd.color)
+            self.color_frame = cv2.cvtColor(np.asarray(rgbd.color), cv2.COLOR_BGR2RGB)
             self.depth_frame = np.asarray(rgbd.depth)
-            # color_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             # Creating and scaling QImage
             h, w, ch = self.color_frame.shape
-            img = QImage(self.color_frame.data, w, h, ch * w, QImage.Format_RGB888)
+            img = QImage(self.color_frame.data, w, h, ch * w, QImage.Format_BGR888)
             scaled_img = img.scaled(640, 480, Qt.KeepAspectRatio)
 
             # Emit signal
             self.updateFrame.emit(scaled_img)
-        # sys.exit(-1)
 
     @Slot(int)
     def adjust_x(self, value):
