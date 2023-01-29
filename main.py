@@ -52,7 +52,7 @@ class CameraRGBD(QThread):
                 print("Unable to mkdir: " + self.output_dir)
 
     def run(self):
-        while self.status:
+        while self.status: 
             rgbd = self.sensor.capture_frame(self.align_depth_to_color)
             if rgbd is None:
                 continue
@@ -66,7 +66,7 @@ class CameraRGBD(QThread):
 
             # Emit signal
             self.updateFrame.emit(scaled_img)
-        sys.exit(-1)
+        # sys.exit(-1)
 
     @Slot(int)
     def adjust_x(self, value):
@@ -155,9 +155,11 @@ class Window(QMainWindow):
         self.button_photo.setEnabled(False)
         self.button_start.setEnabled(True)
         self.th.status = False
+        # Give time for the camera to finish
+        time.sleep(1)
         self.th.terminate()
         # Give time for the thread to finish
-        time.sleep(1)
+        time.sleep(2)
 
     @Slot()
     def start(self):
@@ -183,17 +185,21 @@ class Window(QMainWindow):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Azure kinect recorder.')
     parser.add_argument('--config', type=str, help='input json kinect config')
-    parser.add_argument('--output',
-                        type=str,
-                        help='output path to store color/ and depth/ images')
+    parser.add_argument('--list', action='store_true', help='list available azure kinect sensors')
+    parser.add_argument('--device', type=int, default=0, help='input kinect device id')
+    parser.add_argument('--output', type=str, help='output path to store color/ and depth/ images')
     args = parser.parse_args()
+
+    if args.list:
+        o3d.io.AzureKinectSensor.list_devices()
+        exit()
 
     if args.config is not None:
         config = o3d.io.read_azure_kinect_sensor_config(args.config)
     else:
         config = o3d.io.AzureKinectSensorConfig()
     sensor = o3d.io.AzureKinectSensor(config)
-    if not sensor.connect(0):
+    if not sensor.connect(args.device):
         raise RuntimeError('Failed to connect to sensor')
     app = QApplication()
     w = Window(sensor, args.output)
