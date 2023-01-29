@@ -35,9 +35,11 @@ class CameraRGBD(QThread):
     
     def set_output_dir(self, output_dir):
         self.output_dir = output_dir
-        if (self.output_dir is None):
-            self.output_dir = "./frames"
-        elif (os.path.isdir(self.output_dir + "/color") and os.path.isdir(self.output_dir + "/depth")):
+        if self.output_dir is None:
+            self.output_dir = "frames"
+
+        if (os.path.isdir(self.output_dir + "/color") and os.path.isdir(self.output_dir + "/depth")):
+            print('Output directory \'{}\' already existing, continue recording there'.format(self.output_dir))
             for path in os.listdir(self.output_dir + "/color"):
                 # check if current path is a file
                 if os.path.isfile(os.path.join(self.output_dir + "/color", path)):
@@ -61,7 +63,6 @@ class CameraRGBD(QThread):
             h, w, ch = self.color_frame.shape
             img = QImage(self.color_frame.data, w, h, ch * w, QImage.Format_BGR888)
             scaled_img = img.scaled(640, 480, Qt.KeepAspectRatio)
-
             # Emit signal
             self.updateFrame.emit(scaled_img)
 
@@ -184,7 +185,7 @@ if __name__ == "__main__":
     parser.add_argument('--config', type=str, help='input json kinect config')
     parser.add_argument('--list', action='store_true', help='list available azure kinect sensors')
     parser.add_argument('--device', type=int, default=0, help='input kinect device id')
-    parser.add_argument('--output', type=str, help='output path to store color/ and depth/ images')
+    parser.add_argument('--output', type=str, default="frames", help='output path to store color/ and depth/ images,  Default: frames')
     args = parser.parse_args()
 
     if args.list:
@@ -196,8 +197,15 @@ if __name__ == "__main__":
     else:
         config = o3d.io.AzureKinectSensorConfig()
     sensor = o3d.io.AzureKinectSensor(config)
-    if not sensor.connect(args.device):
+
+    device = args.device
+    if device < 0 or device > 255:
+        print('Unsupported device id, fall back to 0')
+        device = 0
+
+    if not sensor.connect(device):
         raise RuntimeError('Failed to connect to sensor')
+    
     app = QApplication()
     w = Window(sensor, args.output)
     w.show()
