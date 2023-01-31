@@ -83,7 +83,7 @@ class CameraRGBD(QThread):
         depth_mean = (depth_batch.sum(axis=0)/depth_batch.shape[0]).astype(np.uint16)
         cv2.imwrite(self.output_dir + "/color/" + str(self.number_last_frame) + ".jpg", self.color_frame)
         cv2.imwrite(self.output_dir + "/depth/raw/" + str(self.number_last_frame) + ".png", depth_raw)
-        cv2.imwrite(self.output_dir + "/depth/mean/" + str(self.number_last_frame) + ".png", depth_mean)
+        cv2.imwrite(self.output_dir + "/depth/mean_30/" + str(self.number_last_frame) + ".png", depth_mean)
         self.number_last_frame += 1
 
 
