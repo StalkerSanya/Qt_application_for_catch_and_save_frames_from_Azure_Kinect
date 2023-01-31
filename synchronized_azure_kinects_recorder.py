@@ -55,7 +55,7 @@ class CameraRGBD(QThread):
                 color_frame = Image.open(self.input + "/" + "color.jpg")
                 color_frame = np.asarray(color_frame)
                 depth_frame = Image.open(self.input + "/" + "depth.png")
-                depth_frame = np.asarray(depth_frame)
+                depth_frame = np.asarray(depth_frame, dtype=np.uint16)
             except:
                 continue
             self.color_frame = color_frame
