@@ -46,13 +46,14 @@ class CameraRGBD(QThread):
             try:
                 os.mkdir(self.output_dir)
                 os.mkdir(self.output_dir + "/color")
+                os.mkdir(self.output_dir + "/depth/")
                 os.mkdir(self.output_dir + "/depth/raw")
                 os.mkdir(self.output_dir + "/depth/mean_30")
             except (PermissionError, FileExistsError):
                 print("Unable to mkdir: " + self.output_dir)
 
     def run(self):
-        if self.depth_queue.count() != 0:
+        if self.depth_queue:
             self.depth_queue.clear()
         while self.status:
             try:
