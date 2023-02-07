@@ -6,6 +6,7 @@ import cv2
 import argparse
 import numpy as np
 from PIL import Image
+from collections import deque
 from PySide6.QtCore import Qt, QThread, Signal, Slot
 from PySide6.QtGui import QAction, QImage, QKeySequence, QPixmap
 from PySide6.QtWidgets import (QApplication, QComboBox, QGroupBox,
@@ -21,7 +22,7 @@ class CameraRGBD(QThread):
         self.status = True
         self.input = None
         self.color_frame = None
-        self.depth_frame = None
+        self.depth_queue = deque(maxlen=30)
         self.output_dir = None
         self.number_last_frame = 1
         self.align_depth_to_color = True
@@ -44,7 +45,9 @@ class CameraRGBD(QThread):
             try:
                 os.mkdir(self.output_dir)
                 os.mkdir(self.output_dir + "/color")
-                os.mkdir(self.output_dir + "/depth")
+                os.mkdir(self.output_dir + "/depth/")
+                os.mkdir(self.output_dir + "/depth/raw")
+                os.mkdir(self.output_dir + "/depth/mean_30")
             except (PermissionError, FileExistsError):
                 print("Unable to mkdir: " + self.output_dir)
     
@@ -59,7 +62,7 @@ class CameraRGBD(QThread):
             except:
                 continue
             self.color_frame = color_frame
-            self.depth_frame = depth_frame
+            self.depth_queue.append(depth_frame)
             # Creating and scaling QImage
             h, w, ch = self.color_frame.shape
             img = QImage(self.color_frame.data, w, h, ch * w, QImage.Format_BGR888)
@@ -73,8 +76,13 @@ class CameraRGBD(QThread):
         
     @Slot()
     def save_frames(self):
+        time.sleep(1)
+        depth_batch = np.asarray(self.depth_queue)
+        depth_raw = depth_batch[-1]
+        depth_mean = (depth_batch.sum(axis=0)/depth_batch.shape[0]).astype(np.uint16)
         cv2.imwrite(self.output_dir + "/color/" + str(self.number_last_frame) + ".jpg", self.color_frame)
-        cv2.imwrite(self.output_dir + "/depth/" + str(self.number_last_frame) + ".png", self.depth_frame)
+        cv2.imwrite(self.output_dir + "/depth/raw/" + str(self.number_last_frame) + ".png", depth_raw)
+        cv2.imwrite(self.output_dir + "/depth/mean_30/" + str(self.number_last_frame) + ".png", depth_mean)
         self.number_last_frame += 1
 
 
@@ -82,11 +90,6 @@ class CameraRGBD(QThread):
 class Window(QMainWindow):
     def __init__(self, input, output):
         super().__init__()
-        # Title and dimensions
-        # config = o3d.io.AzureKinectSensorConfig()
-        # self.sensor = o3d.io.AzureKinectSensor(config)
-        # if not self.sensor.connect(0):
-        #     raise RuntimeError('Failed to connect to sensor')
         self.setWindowTitle("Patterns detection")
         self.setGeometry(0, 0, 800, 500)
 
