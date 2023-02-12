@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-
+from datetime import datetime
 import cv2
 import open3d as o3d
 import argparse
@@ -80,12 +80,20 @@ class CameraRGBD(QThread):
     @Slot()
     def save_frames(self):
         time.sleep(1)
+        current_datetime = datetime.now()
+        unique_image_name = str(current_datetime.year) + "-" \
+                            + str(current_datetime.month) + "-" \
+                            + str(current_datetime.day) + "_" \
+                            + str(current_datetime.hour) + "-" \
+                            + str(current_datetime.minute) + "-" \
+                            + str(current_datetime.second)
+        cv2.imwrite(self.output_dir + "/color/" + unique_image_name + ".jpg", self.color_frame)
         depth_batch = np.asarray(self.depth_queue)
         depth_raw = depth_batch[-1]
         depth_mean = (depth_batch.sum(axis=0)/depth_batch.shape[0]).astype(np.uint16)
-        cv2.imwrite(self.output_dir + "/color/" + str(self.number_last_frame) + ".jpg", self.color_frame)
-        cv2.imwrite(self.output_dir + "/depth/raw/" + str(self.number_last_frame) + ".png", depth_raw)
-        cv2.imwrite(self.output_dir + "/depth/mean_30/" + str(self.number_last_frame) + ".png", depth_mean)
+        cv2.imwrite(self.output_dir + "/depth/raw/" + unique_image_name + ".png", depth_raw)
+        cv2.imwrite(self.output_dir + "/depth/mean_30/" + unique_image_name + ".png", depth_mean)
+        print("frame ", self.number_last_frame)
         self.number_last_frame += 1
 
 
