@@ -7,8 +7,9 @@ import open3d as o3d
 import argparse
 import numpy as np
 from collections import deque
-from PySide6.QtCore import Qt, QThread, Signal, Slot
+from PySide6.QtCore import Qt, QThread, Signal, Slot, QUrl
 from PySide6.QtGui import QAction, QImage, QKeySequence, QPixmap
+from PySide6.QtMultimedia import QSoundEffect
 from PySide6.QtWidgets import (QApplication, QComboBox, QGroupBox,
                                QHBoxLayout, QLabel, QMainWindow, QPushButton,
                                QSizePolicy, QVBoxLayout, QWidget, QSlider)
@@ -166,6 +167,11 @@ class Window(QMainWindow):
         widget.setLayout(main_layout)
         self.setCentralWidget(widget)
 
+        # Sound Effect for ending of saving frames event 
+        self.effect = QSoundEffect()
+        self.effect.setSource(QUrl.fromLocalFile("zatvor.wav"))
+        self.effect.setVolume(1.00)
+
     @Slot()
     def kill_thread(self):
         print("Finishing...")
@@ -199,6 +205,14 @@ class Window(QMainWindow):
     def setImage(self, image):
         self.label.setPixmap(QPixmap.fromImage(image))
 
+    def keyPressEvent(self, event):
+        if event.key() == 16777239: # clicker button code
+            print("Saving frames...")
+            self.button_photo.setEnabled(False)
+            self.th.save_frames()
+            self.button_photo.setEnabled(True)
+            self.effect.play()
+            print("Saved")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Azure kinect recorder.')
