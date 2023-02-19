@@ -33,11 +33,6 @@ class CameraRGBD(QThread):
         self.number_last_frame = 1
         self.align_depth_to_color = True
 
-        # Sound Effect for ending of saving frames event 
-        self.effect = QSoundEffect()
-        self.effect.setSource(QUrl.fromLocalFile("zatvor.wav"))
-        self.effect.setVolume(1.00)
-
     def set_sensor(self, sensor):
         self.sensor = sensor
     
@@ -94,7 +89,6 @@ class CameraRGBD(QThread):
                             + str(current_datetime.minute) + "-" \
                             + str(current_datetime.second)
         cv2.imwrite(self.output_dir + "/color/" + unique_image_name + ".jpg", self.color_frame)
-        self.effect.play()
         depth_batch = np.asarray(self.depth_queue)
         depth_raw = depth_batch[-1]
         depth_mean = (depth_batch.sum(axis=0)/depth_batch.shape[0]).astype(np.uint16)
@@ -173,6 +167,10 @@ class Window(QMainWindow):
         widget.setLayout(main_layout)
         self.setCentralWidget(widget)
 
+        # Sound Effect for ending of saving frames event 
+        self.effect = QSoundEffect()
+        self.effect.setSource(QUrl.fromLocalFile("zatvor.wav"))
+        self.effect.setVolume(1.00)
 
     @Slot()
     def kill_thread(self):
@@ -213,6 +211,7 @@ class Window(QMainWindow):
             self.button_photo.setEnabled(False)
             self.th.save_frames()
             self.button_photo.setEnabled(True)
+            self.effect.play()
             print("Saved")
 
 if __name__ == "__main__":
