@@ -29,6 +29,8 @@ class CameraRGBD(QThread):
         self.sensor = None
         self.color_frame = None
         self.depth_queue = deque(maxlen=30)
+        self.depth_raw = None
+        self.depth_mean = None
         self.output_dir = None
         self.number_last_frame = 1
         self.align_depth_to_color = True
@@ -60,13 +62,27 @@ class CameraRGBD(QThread):
     def run(self):
         if self.depth_queue:
             self.depth_queue.clear()
+        depth_sum = None
         while self.status: 
             rgbd = self.sensor.capture_frame(self.align_depth_to_color)
             if rgbd is None:
                 continue
             self.color_frame = cv2.cvtColor(np.asarray(rgbd.color), cv2.COLOR_BGR2RGB)
             depth_frame = np.asarray(rgbd.depth)
-            self.depth_queue.append(depth_frame)
+            if len(self.depth_queue) == 30:
+                depth_frame_begin = self.depth_queue.popleft()
+                self.depth_queue.append(depth_frame)
+                depth_sum -= depth_frame_begin
+                depth_sum += depth_frame
+                self.depth_raw = depth_frame
+                self.depth_mean = (depth_sum/30).astype(np.uint16)
+            else:
+                self.depth_queue.append(depth_frame)
+                if depth_sum is not None:
+                    depth_sum += depth_frame
+                else:
+                    depth_sum = depth_frame
+                    
             # Creating and scaling QImage
             h, w, ch = self.color_frame.shape
             img = QImage(self.color_frame.data, w, h, ch * w, QImage.Format_BGR888)
@@ -89,11 +105,8 @@ class CameraRGBD(QThread):
                             + str(current_datetime.minute) + "-" \
                             + str(current_datetime.second)
         cv2.imwrite(self.output_dir + "/color/" + unique_image_name + ".jpg", self.color_frame)
-        depth_batch = np.asarray(self.depth_queue)
-        depth_raw = depth_batch[-1]
-        depth_mean = (depth_batch.sum(axis=0)/depth_batch.shape[0]).astype(np.uint16)
-        cv2.imwrite(self.output_dir + "/depth/raw/" + unique_image_name + ".png", depth_raw)
-        cv2.imwrite(self.output_dir + "/depth/mean_30/" + unique_image_name + ".png", depth_mean)
+        cv2.imwrite(self.output_dir + "/depth/raw/" + unique_image_name + ".png", self.depth_raw)
+        cv2.imwrite(self.output_dir + "/depth/mean_30/" + unique_image_name + ".png", self.depth_mean)
         print("frame ", self.number_last_frame)
         self.number_last_frame += 1
 
