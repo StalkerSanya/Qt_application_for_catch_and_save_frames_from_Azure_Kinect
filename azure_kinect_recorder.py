@@ -6,6 +6,7 @@ import cv2
 import open3d as o3d
 import argparse
 import numpy as np
+import copy
 from collections import deque
 from PySide6.QtCore import Qt, QThread, Signal, Slot, QUrl
 from PySide6.QtGui import QAction, QImage, QKeySequence, QPixmap
@@ -72,16 +73,17 @@ class CameraRGBD(QThread):
             if len(self.depth_queue) == 30:
                 depth_frame_begin = self.depth_queue.popleft()
                 self.depth_queue.append(depth_frame)
-                depth_sum -= depth_frame_begin
-                depth_sum += depth_frame
-                self.depth_raw = depth_frame
-                self.depth_mean = (depth_sum/30).astype(np.uint16)
+                depth_sum -= depth_frame_begin.astype(np.int64)
+                depth_sum += depth_frame.astype(np.int64)
+                self.depth_queue.append(depth_frame)
+                self.depth_raw = copy.deepcopy(depth_frame)
+                self.depth_mean = copy.deepcopy((depth_sum/30).astype(np.uint16))
             else:
                 self.depth_queue.append(depth_frame)
                 if depth_sum is not None:
-                    depth_sum += depth_frame
+                    depth_sum += depth_frame.astype(np.int64)
                 else:
-                    depth_sum = depth_frame
+                    depth_sum = depth_frame.astype(np.int64)
                     
             # Creating and scaling QImage
             h, w, ch = self.color_frame.shape
