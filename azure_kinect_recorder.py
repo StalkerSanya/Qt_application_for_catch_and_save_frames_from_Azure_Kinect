@@ -72,7 +72,6 @@ class CameraRGBD(QThread):
             depth_frame = np.asarray(rgbd.depth)
             if len(self.depth_queue) == 30:
                 depth_frame_begin = self.depth_queue.popleft()
-                self.depth_queue.append(depth_frame)
                 depth_sum -= depth_frame_begin.astype(np.int64)
                 depth_sum += depth_frame.astype(np.int64)
                 self.depth_queue.append(depth_frame)
